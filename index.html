@@ -6,7 +6,7 @@
   <title>读经计划</title>
   <style>
     :root {
-      color-scheme: light;
+      color-scheme: light dark;
       --bg: #f7f6f2;
       --panel: #ffffff;
       --text: #1e2526;
@@ -18,13 +18,27 @@
       --warn: #fff4df;
       --shadow: 0 18px 50px rgba(29, 38, 37, .10);
     }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #121715;
+        --panel: #1b211f;
+        --text: #edf2ef;
+        --muted: #a8b3ae;
+        --line: #33403b;
+        --accent: #77c7b5;
+        --accent-2: #e0a06d;
+        --soft: #22322d;
+        --warn: #2f2618;
+        --shadow: 0 18px 50px rgba(0, 0, 0, .32);
+      }
+    }
     * { box-sizing: border-box; }
     body {
       margin: 0;
       font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
       background:
         radial-gradient(circle at 14% 10%, rgba(47,111,98,.10), transparent 28%),
-        linear-gradient(180deg, #fbfaf7 0%, var(--bg) 100%);
+        linear-gradient(180deg, color-mix(in srgb, var(--panel) 68%, var(--bg)) 0%, var(--bg) 100%);
       color: var(--text);
     }
     .shell { max-width: 1120px; margin: 0 auto; padding: 34px 18px 56px; }
@@ -54,6 +68,10 @@
       font: inherit;
       padding: 0 12px;
     }
+    @media (prefers-color-scheme: dark) {
+      .toolbar { background: rgba(27, 33, 31, .82); }
+      input, select, button { background: #202824; }
+    }
     button { cursor: pointer; font-weight: 650; }
     button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
     .quick { display: flex; gap: 8px; }
@@ -76,12 +94,12 @@
     }
     .panel-title { margin: 0; font-size: 20px; font-weight: 750; }
     .date-pill { background: var(--soft); color: var(--accent); padding: 6px 10px; border-radius: 999px; font-weight: 700; font-size: 14px; }
-    .tasks { padding: 14px; display: grid; gap: 12px; }
+    .tasks { padding: 0; display: grid; gap: 0; }
     .task {
       border: 1px solid var(--line);
       border-radius: 8px;
       padding: 14px;
-      background: #fff;
+      background: var(--panel);
     }
     .task-top { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; margin-bottom: 10px; }
     .book { font-weight: 750; font-size: 17px; }
@@ -97,20 +115,40 @@
       background: var(--soft);
       border-radius: 8px;
     }
-    .memory-card {
+    .mini-card {
       margin: 14px;
       padding: 16px;
       border-radius: 8px;
-      background: var(--warn);
-      border: 1px solid #ead3a8;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      width: calc(100% - 28px);
     }
-    .memory-card h3 { margin: 0 0 10px; font-size: 16px; }
-    .memory-item { padding: 10px 0; border-top: 1px solid rgba(154,89,54,.22); }
+    .mini-card h3 { margin: 0 0 10px; font-size: 16px; color: var(--text); }
+    .memory-card { background: var(--warn); border-color: color-mix(in srgb, var(--accent-2) 46%, var(--line)); }
+    .memory-item { padding: 10px 0; border-top: 1px solid color-mix(in srgb, var(--accent-2) 30%, transparent); }
     .memory-item:first-of-type { border-top: 0; padding-top: 0; }
-    .timeline { padding: 10px 14px 14px; max-height: 620px; overflow: auto; }
+    .card-meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+    .card-meta span {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.35;
+      font-weight: 650;
+    }
+    .card-meta span + span::before {
+      content: "·";
+      margin-right: 8px;
+      color: var(--line);
+    }
+    .timeline {
+      --day-row-height: 58px;
+      padding: 10px 14px 14px;
+      max-height: calc(var(--day-row-height) * 7 + 24px);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
     .day {
       width: 100%;
-      min-height: 54px;
+      min-height: var(--day-row-height);
       display: grid;
       grid-template-columns: 122px 1fr;
       gap: 10px;
@@ -143,12 +181,15 @@
       .panel-head { padding: 14px 12px 12px; align-items: flex-start; }
       .panel-title { font-size: 18px; }
       .date-pill { font-size: 13px; }
-      .tasks { padding: 10px; }
-      .task { padding: 12px; }
-      .task-top { display: block; }
-      .sheet { margin-top: 4px; }
+      .tasks { padding: 0; }
+      .mini-card { margin: 10px; padding: 12px; width: calc(100% - 20px); }
       .row { grid-template-columns: 64px 1fr; gap: 8px; }
-      .timeline { padding: 8px 10px 12px; max-height: none; }
+      .timeline {
+        --day-row-height: 64px;
+        padding: 8px 10px 12px;
+        max-height: calc(var(--day-row-height) * 7 + 20px);
+        overflow-y: auto;
+      }
       .day { grid-template-columns: 1fr; gap: 4px; padding: 12px 6px; }
     }
   </style>
@@ -253,19 +294,19 @@
       selectedDateLabel.textContent = formatDate(iso);
       const memories = list.filter(x => x.memory).map(x => ({sheet: x.sheet, memory: x.memory}));
       memoryBox.innerHTML = memories.length
-        ? `<div class="memory-card"><h3>今日背诵</h3>${memories.map(x => `<div class="memory-item"><strong>${esc(x.memory)}</strong></div>`).join('')}</div>`
+        ? `<div class="mini-card memory-card"><h3>今日背诵</h3>${memories.map(x => `<div class="memory-item"><strong>${esc(x.memory)}</strong></div>`).join('')}</div>`
         : '';
       tasksEl.innerHTML = list.length ? list.map(item => `
-        <article class="task">
-          <div class="task-top">
-            <div class="book">${esc(item.mainBook || item.sheet)}</div>
-            <div class="sheet">${esc(item.sheet)}</div>
+        <article class="mini-card reading-card">
+          <h3>今日阅读</h3>
+          <div class="card-meta">
+            <span>${esc(item.sheet || '/')}</span>
+            <span>${esc(item.mainBook || '/')}</span>
           </div>
           <div class="task-list">
             ${row('书籍阅读', [item.mainPages, item.epubSection].filter(Boolean).join(' · '))}
             ${row('概论书籍', item.overview)}
             ${row('看', item.bibleReading)}
-            ${row('背', item.memory)}
             ${row('备注', item.note)}
           </div>
         </article>
